@@ -78,9 +78,7 @@ public class Grid
 	public void Set(int x, int y, Transform? transform)
 	{
 		if (x < width && x >= 0 && y < width && y >= 0)
-		{
 			gridArray[x, y] = transform;
-		}
 	}
 #nullable disable
 
@@ -90,5 +88,23 @@ public class Grid
 	public Transform Get(int x, int y)
 	{
 		return gridArray[x, y];
+	}
+
+	public bool IsInsideGrid(int x, int y)
+	{
+		if (x < width && x >= 0 && y < width && y >= 0)
+			return true;
+		return false;
+	}
+
+	/**
+	 * Is the direction of the tile valid for movement?
+	 * If there is other tile at location return false
+	 **/
+	public bool IsDirectionValid(int x, int y)
+	{
+		if (gridArray[x, y] == null)
+			return true;
+		return false;
 	}
 }

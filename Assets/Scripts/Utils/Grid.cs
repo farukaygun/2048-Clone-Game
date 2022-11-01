@@ -12,7 +12,7 @@ public class Grid
 	public int Height { get; set; }
 
 	private readonly float cellOffset = 0.5f; // set node position to center of square
-	private readonly Transform[,] gridArray;
+	private readonly Transform[,] grid;
 	private readonly float cellSize;
 
 	public Grid(int width, int height, float cellSize = 1)
@@ -21,7 +21,7 @@ public class Grid
 		this.Height = height;
 		this.cellSize = cellSize;
 
-		gridArray = new Transform[width, height];
+		grid = new Transform[width, height];
 
 		DisplayGrid();
 	}
@@ -31,16 +31,16 @@ public class Grid
 	/// </summary>
 	private void DisplayGrid()
 	{
-		for (int x = 0; x < gridArray.GetLength(0); x++)
+		for (int x = 0; x < grid.GetLength(0) - 1; x++)
 		{
-			for (int y = 0; y < gridArray.GetLength(1); y++)
+			for (int y = 0; y < grid.GetLength(1) - 1; y++)
 			{
 				Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 100f);
 				Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 100f);
 			}
 
-			Debug.DrawLine(GetWorldPosition(0, Height), GetWorldPosition(Width, Height), Color.white, 100f);
-			Debug.DrawLine(GetWorldPosition(Width, 0), GetWorldPosition(Width, Height), Color.white, 100f);
+			Debug.DrawLine(GetWorldPosition(0, Height - 1), GetWorldPosition(Width - 1, Height - 1), Color.white, 100f);
+			Debug.DrawLine(GetWorldPosition(Width - 1, 0), GetWorldPosition(Width - 1, Height - 1), Color.white, 100f);
 		}
 	}
 
@@ -64,7 +64,7 @@ public class Grid
 	public void Set(int x, int y, Transform? transform)
 	{
 		if (x < Width && x >= 0 && y < Width && y >= 0)
-			gridArray[x, y] = transform;
+			grid[x, y] = transform;
 	}
 #nullable disable
 
@@ -73,15 +73,15 @@ public class Grid
 	/// </summary>
 	public Transform Get(int x, int y)
 	{
-		return gridArray[x, y];
+		return grid[x, y];
 	}
 
 	/// <summary>
 	/// Returns whether the given indexes are nodes of the grid.
 	/// </summary>
-	public bool IsInsideGrid(int x, int y)
+	public bool IsInsideGrid(Vector2 pos)
 	{
-		if (x < Width && x >= 0 && y < Width && y >= 0)
+		if (pos.x < Width && pos.x >= 0 && pos.y < Height && pos.y >= 0)
 			return true;
 		return false;
 	}
@@ -90,9 +90,9 @@ public class Grid
 	/// Is the direction of the tile valid for movement?
 	///	If there is other tile at location return false
 	/// </summary>
-	public bool IsDirectionValid(int x, int y)
+	public bool IsDirectionValid(Vector2 pos)
 	{
-		if (gridArray[x, y] == null)
+		if (grid[(int)pos.x, (int)pos.y] == null)
 			return true;
 		return false;
 	}

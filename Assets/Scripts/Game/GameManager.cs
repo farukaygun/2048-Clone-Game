@@ -48,7 +48,7 @@ public class GameManager : MonoBehaviour
 	{
 		Score = 0;
 		bestScore = PlayerPrefs.GetInt("Best Score");
-		textBestScore.text = "BEST: " + bestScore;
+		textBestScore.text = "BEST\n" + bestScore;
 		grid = GridManager.Instance.grid;
 		maxChildCount = grid.Width * grid.Height;
 		OnTileCreated?.Invoke(2);
@@ -56,17 +56,11 @@ public class GameManager : MonoBehaviour
 
 	private void Update()
 	{
-		if (!IsGameOver())
-		{
-			UserInput();
-		} 
+		if (!IsGameOver()) UserInput(); 
 		else
 		{
-			print("GameOver");
 			if (Score > bestScore)
-			{
 				PlayerPrefs.SetInt("Best Score", Score);
-			}
 			textGameOver.gameObject.SetActive(true);
 		}
 	}
@@ -107,7 +101,7 @@ public class GameManager : MonoBehaviour
 	}
 	public void SetTextScore()
 	{
-		textScore.text = "SCORE: " + Score.ToString();
+		textScore.text = "SCORE\n" + Score.ToString();
 	}
 
 	private bool IsGameOver()
@@ -123,14 +117,12 @@ public class GameManager : MonoBehaviour
 				tileBelow = null;
 				tileBeside = null;
 
-				if (j != 0)
-				{
+				if (j != 0) 
 					tileBelow = grid.Get(i, j - 1);
-				}
-				if (i != grid.Width - 1)
-				{
+
+				if (i != grid.Width - 1) 
 					tileBeside = grid.Get(i + 1, j);
-				}
+
 				if (tileBeside != null)
 				{
 					if (currentTile.GetComponent<Tile>().tileValue == tileBeside.GetComponent<Tile>().tileValue)

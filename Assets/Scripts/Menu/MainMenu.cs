@@ -10,7 +10,8 @@ public class MainMenu : MonoBehaviour
 	[SerializeField] private TMP_Text textBestScore;
 	[SerializeField] private Button buttonPlay;
 	[SerializeField] private Button buttonExit;
-	[SerializeField] private GameObject panelLoading; 
+	[SerializeField] private GameObject panelLoading;
+	[SerializeField] private LoadingBarController loadingBarController;
 
 	private void OnEnable()
 	{
@@ -27,15 +28,31 @@ public class MainMenu : MonoBehaviour
 
 	private void Start()
 	{
-		textBestScore.text = "BEST SCORE: " + PlayerPrefs.GetInt("Best Score").ToString();
+		textBestScore.text = "BEST\n" + PlayerPrefs.GetInt("Best Score").ToString();
+		
 	}
 
+	// Added delay for showing loading bar and screen.
 	private IEnumerator LoadSceneAsync(int index)
 	{
+		int loadingValue = 0;
+
+		AsyncOperation operation = SceneManager.LoadSceneAsync(index);
+		operation.allowSceneActivation = false;
+
 		panelLoading.SetActive(true);
 
-		yield return new WaitForSeconds(3);
+		while(!operation.isDone)
+		{
+			loadingBarController.OnLoadingBarChanged(loadingValue);
+			loadingValue += 1;
 
-		AsyncOperation op = SceneManager.LoadSceneAsync(index);
+			if (loadingValue >= 100)
+			{
+				operation.allowSceneActivation = true;
+			}
+
+			yield return new WaitForSeconds(0.05f);
+		}
 	}
 }

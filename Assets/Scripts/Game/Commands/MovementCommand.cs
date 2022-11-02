@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening;
 
 public class MovementCommand : IMovementCommand
 {
@@ -104,7 +103,7 @@ public class MovementCommand : IMovementCommand
 				else
 				{
 					// if these tiles can't merged.
-					if (!TileManager.Instance.CombineTiles(tile, pos))
+					if (!TileManager.Instance.JoinTiles(tile, pos))
 					{
 						tile.transform.localPosition -= (Vector3)direction;
 						// if tile's substitution is 0.
@@ -148,7 +147,7 @@ public class MovementCommand : IMovementCommand
 	//			else
 	//			{
 	//				// if these tiles can't merged.
-	//				if (!TileManager.Instance.CombineTiles(tile))
+	//				if (!TileManager.Instance.JoinTiles(tile))
 	//				{
 	//					tile.transform.localPosition -= (Vector3)direction;
 	//					// if tile's substitution is 0.

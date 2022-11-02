@@ -52,7 +52,7 @@ public class TileManager : MonoBehaviour
 	}
 
 
-	public bool CombineTiles(Transform movingTile, Vector2 destinationPos)
+	public bool JoinTiles(Transform movingTile, Vector2 destinationPos)
 	{
 		Vector2 pos = movingTile.position;
 		Transform collidingTile = gridManager.grid.Get((int)pos.x, (int)pos.y);
@@ -90,7 +90,7 @@ public class TileManager : MonoBehaviour
 
 
 	/**
-	 * TODO: Object pooling can use instead of Resources.Load
+	 * TODO: Object pooling may be use instead of Resources.Load
 	 **/
 	private void GenerateNewTile(int count)
 	{
@@ -110,8 +110,7 @@ public class TileManager : MonoBehaviour
 
 			// new tile animation
 			newTile.transform.DOScale(newScale, 0.2f);
+			GridManager.Instance.UpdateGrid();
 		}
-
-		GridManager.Instance.UpdateGrid();
 	}
 }

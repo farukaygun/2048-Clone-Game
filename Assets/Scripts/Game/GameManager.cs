@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
 	private Transform currentTile;
 	private Transform tileBelow;
 	private Transform tileBeside;
-	int maxChildCount;
+	private int maxChildCount;
 #endregion
 
 
@@ -125,6 +125,7 @@ public class GameManager : MonoBehaviour
 
 				if (tileBeside != null)
 				{
+					// FIXME: There is a bug here.
 					if (currentTile.GetComponent<Tile>().tileValue == tileBeside.GetComponent<Tile>().tileValue)
 						return false;
 				}

@@ -17,6 +17,8 @@ public class TileManager : MonoBehaviour
 		GameManager.OnTileCreated += OnTileCreatedHandler;
 		GameManager.OnResetTilesState += OnResetTilesStateHandler;
 		MovementCommand.OnTileCreated += OnTileCreatedHandler;
+
+		MovementCommand.OnTilesMoving += OnTilesMovingHandler;
 	}
 
 	private void OnDisable()
@@ -24,6 +26,8 @@ public class TileManager : MonoBehaviour
 		GameManager.OnTileCreated -= OnTileCreatedHandler;
 		GameManager.OnResetTilesState -= OnResetTilesStateHandler;
 		MovementCommand.OnTileCreated -= OnTileCreatedHandler;
+
+		MovementCommand.OnTilesMoving -= OnTilesMovingHandler;
 	}
 
 	private void Awake()
@@ -42,6 +46,54 @@ public class TileManager : MonoBehaviour
 		GenerateNewTile(count);
 	}
 
+	private void OnTilesMovingHandler()
+	{
+		for (int i = 0; i < gridManager.grid.Width; i++)
+		{
+			for (int j = 0; j < gridManager.grid.Height; j++)
+			{
+                Transform tile = gridManager.grid.Get(i, j);
+                if (tile)
+                    StartCoroutine(SlideTile(tile, 10f));
+            }
+		}
+	}
+
+
+	// TODO: Try to do this with DOTween.
+	private IEnumerator SlideTile(Transform tile, float timeScale)
+	{
+		Tile tileScript = tile.GetComponent<Tile>();
+		float progress = 0;
+		while (progress <= 1)
+		{
+			tile.localPosition = Vector2.Lerp(tileScript.startingPosition, tileScript.movePosition, progress);
+			progress += Time.deltaTime * timeScale;
+			yield return null;
+		}
+
+		tile.localPosition = tileScript.movePosition;
+		if (tileScript.destroy)
+		{
+			int movingTileValue = tileScript.tileValue;
+			if (tileScript.collidingTile != null)
+				Destroy(tileScript.collidingTile.gameObject);
+
+			Destroy(tile.gameObject);
+
+			// create new tile after merge.
+			string newTileName = "Tile-" + movingTileValue * 2;
+			GameObject newTile = Instantiate(Resources.Load(newTileName, typeof(GameObject)), tile.localPosition, Quaternion.identity) as GameObject;
+			newTile.transform.parent = transform;
+			newTile.GetComponent<Tile>().isMergedThisTurn = true;
+			newTile.GetComponent<Tile>().name = "slideTileNewTile";
+			newTile.transform.DOScale(newScale, 0.2f);
+
+			gridManager.grid.Set((int)newTile.transform.localPosition.x, (int)newTile.transform.localPosition.y, newTile.transform);
+		}
+		yield return null;
+	}
+
 	// Set isMergedThisTurn variable to false for all tiles
 	private void OnResetTilesStateHandler()
 	{
@@ -52,32 +104,29 @@ public class TileManager : MonoBehaviour
 	}
 
 
-	public bool JoinTiles(Transform movingTile, Vector2 destinationPos)
+	public bool JoinTiles(Transform movingTile, Vector2 ghostTilePosition, Vector2 previousPosition)
 	{
-		Vector2 pos = movingTile.position;
-		Transform collidingTile = gridManager.grid.Get((int)pos.x, (int)pos.y);
+		Transform collidingTile = gridManager.grid.Get((int)ghostTilePosition.x, (int)ghostTilePosition.y);
+		Tile movingTileScript = movingTile.GetComponent<Tile>();
+		Tile collidingTileScript = collidingTile.GetComponent<Tile>();
+		
 
-		int movingTileValue = movingTile.GetComponent<Tile>().tileValue;
-		int collidingTileValue = collidingTile.GetComponent<Tile>().tileValue;
+		int movingTileValue = movingTileScript.tileValue;
+		int collidingTileValue = collidingTileScript.tileValue;
 
 		if (movingTileValue == collidingTileValue
-			&& !movingTile.GetComponent<Tile>().isMergedThisTurn
-			&& !collidingTile.GetComponent<Tile>().isMergedThisTurn)
+			&& !movingTileScript.isMergedThisTurn
+			&& !collidingTileScript.isMergedThisTurn
+			&& !collidingTileScript.willMergeWithCollidingTile)
 		{
-			Destroy(movingTile.gameObject);
-			Destroy(collidingTile.gameObject);
+			movingTileScript.destroy = true;
+			movingTileScript.collidingTile = collidingTile;
+			movingTileScript.movePosition = ghostTilePosition;
 
-			gridManager.grid.Set((int)pos.x, (int)pos.y, null);
+			gridManager.grid.Set((int)previousPosition.x, (int)previousPosition.y, null);
+			gridManager.grid.Set((int)ghostTilePosition.x, (int)ghostTilePosition.y, movingTile);
 
-			string newTileName = "Tile-" + movingTileValue * 2;
-			GameObject newTile = Instantiate(Resources.Load(newTileName, typeof(GameObject)), pos, Quaternion.identity) as GameObject;
-			newTile.transform.parent = transform;
-			newTile.GetComponent<Tile>().isMergedThisTurn = true;
-
-			// merge animation
-			newTile.transform.DOScale(newScale, 0.2f).SetEase(Ease.OutBack);
-
-			gridManager.UpdateGrid();
+			movingTileScript.willMergeWithCollidingTile = true;
 
 			// increase score
 			gameManager.Score += movingTileValue * 2;
@@ -98,19 +147,21 @@ public class TileManager : MonoBehaviour
 		Vector2 newTileLocation;
 		string tileName = "Tile-2";
 
+
 		for (int i = 0; i < count; i++)
 		{
 			// chance of generate 4 is 20%
-			float random = Random.Range(0, 1);
-			if (random >= 0.8f) tileName = "Tile-4";
+			float random = Random.Range(0f, 1f);
+			if (random >= 0.9f) tileName = "Tile-4";
 
 			newTileLocation = GridManager.Instance.GetEmptyRandomTileLocation();
 			newTile = Instantiate(Resources.Load(tileName, typeof(GameObject)), newTileLocation, Quaternion.identity) as GameObject;
 			newTile.transform.parent = transform;
 
-			// new tile animation
-			newTile.transform.DOScale(newScale, 0.2f);
-			GridManager.Instance.UpdateGrid();
-		}
+            gridManager.grid.Set((int)newTile.transform.localPosition.x, (int)newTile.transform.localPosition.y, newTile.transform);
+
+            // new tile animation
+            newTile.transform.DOScale(newScale, 0.2f);
+        }
 	}
 }

@@ -98,4 +98,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileValue: 2
+  destroy: 0
   isMergedThisTurn: 0
+  willMergeWithCollidingTile: 0
+  movePosition: {x: 0, y: 0, z: 0}
+  startingPosition: {x: 0, y: 0, z: 0}
+  collidingTile: {fileID: 0}

@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using UnityEngine;
 public class MovementCommand : IMovementCommand
 {
 	public static event Action<int> OnTileCreated;
+	public static event Action OnTilesMoving;
 	private Vector2 direction;
 	private Grid grid;
 
@@ -29,6 +31,7 @@ public class MovementCommand : IMovementCommand
 	{
 		grid = GridManager.Instance.grid;
 		int tilesMovedCount = 0;
+		GridManager.Instance.UpdateGrid();
 
 		if (direction == Vector2.up)
 		{
@@ -74,40 +77,49 @@ public class MovementCommand : IMovementCommand
 			}
 		}
 
-		// generate new tile after move tiles
-		if (tilesMovedCount != 0)
+        OnTilesMoving?.Invoke();
+
+        // generate new tile after move tiles
+        if (tilesMovedCount != 0)
 			OnTileCreated?.Invoke(1); // generate new 1 tile 
 	}
 
 	private bool MoveTile(Transform tile, Vector2 direction)
 	{
 		Vector3 startPos = tile.localPosition;
-		Vector2 pos;
+		Vector3 ghostTilePos = tile.localPosition;
+		Vector3 previousPosition;
+
+		tile.GetComponent<Tile>().startingPosition = startPos;
 
 		// until the tile goes as far as it can go
 		while (true)
 		{
 			// set position to next node
-			tile.transform.localPosition += (Vector3)direction;
-			pos = tile.transform.localPosition;
+			ghostTilePos += (Vector3)direction;
+			previousPosition = ghostTilePos - (Vector3)direction;
 
 			// is new node inside grid.
-			if (grid.IsInsideGrid(pos))
+			if (grid.IsInsideGrid(ghostTilePos))
 			{
 				// is new node valid? Is there any other tile at new node.
-				if (grid.IsDirectionValid(pos))
+				if (grid.IsDirectionValid(ghostTilePos))
 				{
 					// if there is no tile at new node then upgrade grid.
-					GridManager.Instance.UpdateGrid();
+					tile.GetComponent<Tile>().movePosition = ghostTilePos;
+					grid.Set((int)previousPosition.x, (int)previousPosition.y, null);
+					grid.Set((int)ghostTilePos.x, (int)ghostTilePos.y, tile);
 				}
 				else
 				{
 					// if these tiles can't merged.
-					if (!TileManager.Instance.JoinTiles(tile, pos))
+					if (!TileManager.Instance.JoinTiles(tile, ghostTilePos, previousPosition))
 					{
-						tile.transform.localPosition -= (Vector3)direction;
+						ghostTilePos -= (Vector3)direction;
+						tile.GetComponent<Tile>().movePosition = ghostTilePos;
+
 						// if tile's substitution is 0.
-						if (tile.transform.localPosition == startPos)
+						if (ghostTilePos == startPos)
 							return false; // tile didn't move.
 						else return true; // tile moved.
 					}
@@ -115,55 +127,12 @@ public class MovementCommand : IMovementCommand
 			}
 			else
 			{
-				tile.transform.localPosition -= (Vector3)direction;
-				if (tile.transform.localPosition == startPos)
+				ghostTilePos -= (Vector3)direction;
+				tile.GetComponent<Tile>().movePosition = ghostTilePos;
+				if (ghostTilePos == startPos)
 					return false;
 				else return true;
 			}
 		}
 	}
-
-	//private bool MoveTile(Transform tile, Vector2 direction)
-	//{
-	//	Vector3 startPos = tile.localPosition;
-	//	Vector2 pos;
-
-	//	// until the tile goes as far as it can go
-	//	while (true)
-	//	{
-	//		// set position to next node
-	//		tile.transform.localPosition += (Vector3)direction;
-	//		pos = tile.transform.localPosition;
-
-	//		// is new node inside grid.
-	//		if (grid.IsInsideGrid(pos))
-	//		{
-	//			// is new node valid? Is there any other tile at new node.
-	//			if (grid.IsDirectionValid(pos))
-	//			{
-	//				// if there is no tile at new node then upgrade grid.
-	//				GridManager.Instance.UpdateGrid();
-	//			}
-	//			else
-	//			{
-	//				// if these tiles can't merged.
-	//				if (!TileManager.Instance.JoinTiles(tile))
-	//				{
-	//					tile.transform.localPosition -= (Vector3)direction;
-	//					// if tile's substitution is 0.
-	//					if (tile.transform.localPosition == startPos)
-	//						return false; // tile didn't move.
-	//					else return true; // tile moved.
-	//				}
-	//			}
-	//		}
-	//		else
-	//		{
-	//			tile.transform.localPosition -= (Vector3)direction;
-	//			if (tile.transform.localPosition == startPos)
-	//				return false;
-	//			else return true;
-	//		}
-	//	}
-	//}
 }
